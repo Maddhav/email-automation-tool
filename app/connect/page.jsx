@@ -47,9 +47,12 @@ export default function Connect() {
               ))}
             </div>
 
-            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 rounded-xl transition flex items-center justify-center gap-3">
+            <Link 
+              href="/api/auth/google" 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 rounded-xl transition flex items-center justify-center gap-3 block"
+            >
               <span>🔗</span> Connect Gmail Account
-            </button>
+            </Link>
 
           </div>
 

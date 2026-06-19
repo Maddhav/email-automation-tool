@@ -1,130 +1,238 @@
 "use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
-import { useState } from "react";
-import Navbar from "../../components/ui/navbar";
+const CATEGORY_STYLES = {
+  Complaint:  { badge: "bg-red-500/15 text-red-700 border border-red-500/20",    dot: "bg-red-400" },
+  Urgent:     { badge: "bg-orange-500/15 text-orange-700 border border-orange-500/20", dot: "bg-orange-400" },
+  Inquiry:    { badge: "bg-blue-500/15 text-blue-700 border border-blue-500/20",  dot: "bg-blue-400" },
+  Spam:       { badge: "bg-gray-500/15 text-gray-400 border border-gray-500/20",  dot: "bg-gray-500" },
+  General:    { badge: "bg-emerald-500/15 text-emerald-700 border border-emerald-500/20", dot: "bg-emerald-400" },
+};
 
 export default function Dashboard() {
-  const [email, setEmail] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [emails, setEmails] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [analyses, setAnalyses] = useState({});
+  const [analyzing, setAnalyzing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const analyzeEmail = async () => {
-    if (!email.trim()) return;
-    setLoading(true);
-    setResult(null);
+  // Fetch real Gmail emails on mount
+  useEffect(() => {
+    async function fetchEmails() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/gmail/inbox");
+        const data = await res.json();
+        
+        if (data.error) {
+          setError(data.error);
+          setEmails([]);
+        } else {
+          setEmails(data.emails || []);
+        }
+      } catch (err) {
+        setError("Failed to fetch emails");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchEmails();
+  }, []);
+
+  async function analyzeEmail(email) {
+    if (analyses[email.id]) {
+      setSelected(email);
+      return;
+    }
+    
+    setSelected(email);
+    setAnalyzing(email.id);
+    
     try {
-      const response = await fetch("/api/analyze", {
+      const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ 
+          email: `Subject: ${email.subject}\n\n${email.snippet || email.body}` 
+        }),
       });
-      const data = await response.json();
-      setResult(data);
-    } catch (error) {
-      console.error(error);
+      
+      const data = await res.json();
+      setAnalyses(prev => ({ ...prev, [email.id]: data }));
+    } catch (err) {
+      console.error("Analysis error:", err);
     }
-    setLoading(false);
+    
+    setAnalyzing(null);
+  }
+
+  const stats = {
+    total: emails.length,
+    analyzed: Object.keys(analyses).length,
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      Complaint: "bg-red-500/20 text-red-300 border-red-500/30",
-      Urgent: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-      Inquiry: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      Spam: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-      General: "bg-green-500/20 text-green-300 border-green-500/30",
-    };
-    return colors[category] || "bg-gray-500/20 text-gray-300 border-gray-500/30";
-  };
+  const currentAnalysis = selected ? analyses[selected.id] : null;
+  const isAnalyzing = selected && analyzing === selected.id;
 
   return (
-    <main className="min-h-screen bg-background text-foreground dark">
+    <div className="min-h-screen bg-gray-900 text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+        .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); }
+        .scroll-thin::-webkit-scrollbar { width: 4px; }
+        .scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+      `}</style>
 
-      <Navbar />
-
-      <div className="container-width py-12">
-
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Email <span className="gradient-text">Dashboard</span>
-          </h1>
-          <p className="text-gray-400">
-            Paste any email and get instant AI analysis and a professional reply
-          </p>
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold">A</div>
+          <span className="font-semibold">AutoReply Pro</span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/connect" className="text-xs text-gray-400 hover:text-white">Reconnect Gmail</Link>
+          <Link href="/settings" className="text-xs text-gray-400 hover:text-white">Settings</Link>
         </div>
+      </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="flex h-screen">
+        {/* Sidebar */}
+        <aside className="w-52 border-r border-gray-800 p-4 flex flex-col">
+          <div className="mb-6">
+            <p className="text-xs text-gray-500 uppercase mb-3">Stats</p>
+            <div className="space-y-2">
+              <div className="glass rounded-lg p-3 text-center">
+                <div className="text-lg font-bold">{stats.total}</div>
+                <div className="text-xs text-gray-400">Emails</div>
+              </div>
+              <div className="glass rounded-lg p-3 text-center">
+                <div className="text-lg font-bold">{stats.analyzed}</div>
+                <div className="text-xs text-gray-400">Analyzed</div>
+              </div>
+            </div>
+          </div>
+        </aside>
 
-          {/* Input Section */}
-          <div className="glass-card rounded-2xl p-6">
-            <label className="block text-sm text-gray-400 mb-3">
-              Paste Email Here
-            </label>
-            <textarea
-              className="w-full h-64 bg-white/5 border border-white/10 rounded-xl p-4 text-white resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Paste the email you received here..."
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <button
-              onClick={analyzeEmail}
-              disabled={loading}
-              className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50"
-            >
-              {loading ? "Analyzing..." : "⚡ Analyze Email"}
-            </button>
+        {/* Email list */}
+        <div className="w-80 border-r border-gray-800 flex flex-col">
+          <div className="px-4 py-3 border-b border-gray-800">
+            <h2 className="text-sm font-semibold">Inbox ({emails.length})</h2>
           </div>
 
-          {/* Results Section */}
-          <div className="glass-card rounded-2xl p-6">
-            {!result && !loading && (
-              <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
-                <div className="text-5xl mb-4">📧</div>
-                <p>Paste an email and click Analyze to see AI results here</p>
+          <div className="flex-1 overflow-y-auto scroll-thin">
+            {loading ? (
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                Loading emails...
               </div>
-            )}
-
-            {loading && (
-              <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
-                <div className="text-5xl mb-4 animate-pulse">🤖</div>
-                <p>AI is analyzing your email...</p>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full text-center px-4">
+                <div>
+                  <p className="text-red-400 text-sm mb-2">{error}</p>
+                  <p className="text-gray-500 text-xs">Try reconnecting Gmail from settings</p>
+                </div>
               </div>
-            )}
-
-            {result && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-400">Category:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm border ${getCategoryColor(result.category)}`}>
-                    {result.category}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-sm text-gray-400 mb-2">Summary</h3>
-                  <p className="text-white/90 leading-relaxed">{result.summary}</p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm text-gray-400 mb-2">Suggested Reply</h3>
-                  <div className="bg-white/5 rounded-xl p-4 whitespace-pre-wrap text-white/90 text-sm leading-relaxed">
-                    {result.reply}
-                  </div>
+            ) : emails.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-gray-500 text-sm text-center px-4">
+                <p>No unread emails found</p>
+              </div>
+            ) : (
+              emails.map(email => {
+                const a = analyses[email.id];
+                return (
                   <button
-                    onClick={() => navigator.clipboard.writeText(result.reply)}
-                    className="mt-3 w-full border border-white/10 hover:border-purple-500/50 text-gray-300 hover:text-white py-2 rounded-xl transition text-sm"
+                    key={email.id}
+                    onClick={() => analyzeEmail(email)}
+                    className={`w-full text-left px-4 py-3 border-b border-gray-800 hover:bg-gray-800/50 transition ${selected?.id === email.id ? "bg-purple-900/20" : ""}`}
                   >
-                    📋 Copy Reply
+                    <p className="text-xs font-medium text-white truncate">{email.from}</p>
+                    <p className="text-xs text-gray-400 truncate mt-1">{email.subject}</p>
+                    <p className="text-xs text-gray-500 line-clamp-2 mt-1">{email.snippet}</p>
+                    {a && (
+                      <div className="mt-2">
+                        <span className={`text-xs px-2 py-0.5 rounded ${CATEGORY_STYLES[a.category]?.badge || "bg-gray-700"}`}>
+                          {a.category}
+                        </span>
+                      </div>
+                    )}
+                    {analyzing === email.id && <p className="text-xs text-purple-400 mt-1">Analyzing...</p>}
                   </button>
-                </div>
-              </div>
+                );
+              })
             )}
           </div>
-
         </div>
 
-      </div>
+        {/* Detail pane */}
+        <main className="flex-1 flex flex-col overflow-hidden p-6">
+          {!selected ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <p className="text-4xl mb-4">📬</p>
+              <p className="text-sm">Select an email to analyze</p>
+            </div>
+          ) : (
+            <div className="space-y-4 overflow-y-auto">
+              {/* Email Header */}
+              <div className="glass rounded-xl p-5">
+                <h2 className="text-lg font-semibold text-white mb-2">{selected.subject}</h2>
+                <p className="text-sm text-gray-400">{selected.from}</p>
+                <p className="text-xs text-gray-500 mt-2">{selected.date}</p>
+                <p className="text-sm text-gray-300 mt-4 leading-relaxed">{selected.snippet}</p>
+              </div>
 
-    </main>
+              {isAnalyzing ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent mb-3" />
+                    <p className="text-sm text-gray-400">AI is analyzing...</p>
+                  </div>
+                </div>
+              ) : currentAnalysis ? (
+                <>
+                  {/* Analysis cards */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Category", value: currentAnalysis.category, style: CATEGORY_STYLES[currentAnalysis.category]?.badge },
+                      { label: "Sentiment", value: currentAnalysis.sentiment || "Neutral" },
+                      { label: "Priority", value: currentAnalysis.priority || "Medium" },
+                    ].map(card => (
+                      <div key={card.label} className="glass rounded-lg p-3">
+                        <p className="text-xs text-gray-500 uppercase mb-2">{card.label}</p>
+                        <span className={`text-xs font-semibold ${card.style || "text-gray-300"}`}>
+                          {card.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Summary */}
+                  <div className="glass rounded-xl p-5">
+                    <p className="text-xs text-gray-500 uppercase mb-2">Summary</p>
+                    <p className="text-sm text-gray-300">{currentAnalysis.summary}</p>
+                  </div>
+
+                  {/* Draft reply */}
+                  <div className="glass rounded-xl p-5">
+                    <p className="text-xs text-gray-500 uppercase mb-3">AI Draft Reply</p>
+                    <textarea
+                      defaultValue={currentAnalysis.reply || ""}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      rows={8}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="glass rounded-xl p-8 text-center text-gray-400 text-sm">
+                  Click email to analyze with AI
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
