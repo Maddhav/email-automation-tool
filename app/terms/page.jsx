@@ -19,13 +19,13 @@ export default function Terms() {
               <li>Use the materials for any commercial purpose or for any public display</li>
               <li>Attempt to decompile or reverse engineer any software</li>
               <li>Remove any copyright or other proprietary notations from the materials</li>
-              <li>Transfer the materials to another person or "mirror" the materials on any other server</li>
+              <li>Transfer the materials to another person or &quot;mirror&quot; the materials on any other server</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold mb-3">3. Disclaimer</h2>
-            <p>The materials on AutoReply Pro are provided on an 'as is' basis. AutoReply Pro makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
+            <p>The materials on AutoReply Pro are provided on an &apos;as is&apos; basis. AutoReply Pro makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
           </section>
 
           <section>
@@ -40,7 +40,7 @@ export default function Terms() {
 
           <section>
             <h2 className="text-xl font-semibold mb-3">6. Links</h2>
-            <p>AutoReply Pro has not reviewed all of the sites linked to its website and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by AutoReply Pro of the site. Use of any such linked website is at the user's own risk.</p>
+            <p>AutoReply Pro has not reviewed all of the sites linked to its website and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by AutoReply Pro of the site. Use of any such linked website is at the user&apos;s own risk.</p>
           </section>
 
           <section>

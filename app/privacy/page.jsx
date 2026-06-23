@@ -8,7 +8,7 @@ export default function Privacy() {
         <div className="space-y-6 text-gray-700">
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Introduction</h2>
-            <p>AutoReply Pro ("we", "our", or "us") operates the autoreplypro.online website and application. This Privacy Policy explains our practices regarding the collection, use, and disclosure of your information.</p>
+            <p>AutoReply Pro (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) operates the autoreplypro.online website and application. This Privacy Policy explains our practices regarding the collection, use, and disclosure of your information.</p>
           </section>
 
           <section>
@@ -48,7 +48,7 @@ export default function Privacy() {
 
           <section>
             <h2 className="text-xl font-semibold mb-3">6. Third-Party Services</h2>
-            <p>We use Google's Gmail API and Groq's AI services. These services have their own privacy policies. We recommend reviewing them.</p>
+            <p>We use Google&apos;s Gmail API and Groq&apos;s AI services. These services have their own privacy policies. We recommend reviewing them.</p>
           </section>
 
           <section>
