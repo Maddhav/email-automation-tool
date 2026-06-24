@@ -209,6 +209,12 @@ export default function Home() {
             <Link href="/dashboard" className="hover:text-white transition">Dashboard</Link>
             <Link href="/connect" className="hover:text-white transition">Connect Gmail</Link>
             <Link href="/settings" className="hover:text-white transition">Settings</Link>
+
+          <footer className="py-6 text-center text-sm text-gray-500">
+  <Link href="/privacy">Privacy Policy</Link>
+  {" | "}
+  <Link href="/terms">Terms of Service</Link>
+</footer>
           </div>
         </div>
       </footer>
