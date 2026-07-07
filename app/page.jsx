@@ -27,7 +27,7 @@ export default function Home() {
           </p>
 
           <div className="flex items-center justify-center gap-4">
-            <Link href="/dashboard">
+            <Link href="/auth/signup" className="...">
               <button className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-4 rounded-2xl transition text-lg">
                 Try it Free →
               </button>

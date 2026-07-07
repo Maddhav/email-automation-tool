@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const CATEGORY_STYLES = {
@@ -11,37 +12,52 @@ const CATEGORY_STYLES = {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
   const [emails, setEmails] = useState([]);
   const [selected, setSelected] = useState(null);
   const [analyses, setAnalyses] = useState({});
   const [analyzing, setAnalyzing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [emailLoading, setEmailLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch real Gmail emails on mount
+  // Check authentication on mount
   useEffect(() => {
-    async function fetchEmails() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/gmail/inbox");
-        const data = await res.json();
-        
-        if (data.error) {
-          setError(data.error);
-          setEmails([]);
-        } else {
-          setEmails(data.emails || []);
-        }
-      } catch (err) {
-        setError("Failed to fetch emails");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    const storedUsername = localStorage.getItem("username");
+    const storedUserId = localStorage.getItem("user_id");
+
+    if (!storedUsername || !storedUserId) {
+      router.push("/auth/login");
+      return;
     }
 
+    setUsername(storedUsername);
+    setLoading(false);
+    
+    // Fetch Gmail emails
     fetchEmails();
-  }, []);
+  }, [router]);
+
+  async function fetchEmails() {
+    try {
+      setEmailLoading(true);
+      const res = await fetch("/api/gmail/inbox");
+      const data = await res.json();
+      
+      if (data.error) {
+        setError(data.error);
+        setEmails([]);
+      } else {
+        setEmails(data.emails || []);
+      }
+    } catch (err) {
+      setError("Failed to fetch emails");
+      console.error(err);
+    } finally {
+      setEmailLoading(false);
+    }
+  }
 
   async function analyzeEmail(email) {
     if (analyses[email.id]) {
@@ -70,6 +86,21 @@ export default function Dashboard() {
     setAnalyzing(null);
   }
 
+  function handleLogout() {
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("user_email");
+    localStorage.removeItem("username");
+    router.push("/auth/login");
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <p className="text-white">Loading...</p>
+      </div>
+    );
+  }
+
   const stats = {
     total: emails.length,
     analyzed: Object.keys(analyses).length,
@@ -93,9 +124,14 @@ export default function Dashboard() {
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold">A</div>
           <span className="font-semibold">AutoReply Pro</span>
         </Link>
-        <div className="flex items-center gap-3">
-          <Link href="/connect" className="text-xs text-gray-400 hover:text-white">Reconnect Gmail</Link>
-          <Link href="/settings" className="text-xs text-gray-400 hover:text-white">Settings</Link>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-400">Welcome, {username}</span>
+          <button
+            onClick={handleLogout}
+            className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition"
+          >
+            Logout
+          </button>
         </div>
       </header>
 
@@ -124,7 +160,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex-1 overflow-y-auto scroll-thin">
-            {loading ? (
+            {emailLoading ? (
               <div className="flex items-center justify-center h-full text-gray-400 text-sm">
                 Loading emails...
               </div>
@@ -132,7 +168,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-center h-full text-center px-4">
                 <div>
                   <p className="text-red-400 text-sm mb-2">{error}</p>
-                  <p className="text-gray-500 text-xs">Try reconnecting Gmail from settings</p>
+                  <p className="text-gray-500 text-xs">Try reconnecting Gmail from connect page</p>
                 </div>
               </div>
             ) : emails.length === 0 ? (
