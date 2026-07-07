@@ -1,15 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const CATEGORY_STYLES = {
-  Complaint:  { badge: "bg-red-500/15 text-red-700 border border-red-500/20",    dot: "bg-red-400" },
-  Urgent:     { badge: "bg-orange-500/15 text-orange-700 border border-orange-500/20", dot: "bg-orange-400" },
-  Inquiry:    { badge: "bg-blue-500/15 text-blue-700 border border-blue-500/20",  dot: "bg-blue-400" },
-  Spam:       { badge: "bg-gray-500/15 text-gray-400 border border-gray-500/20",  dot: "bg-gray-500" },
-  General:    { badge: "bg-emerald-500/15 text-emerald-700 border border-emerald-500/20", dot: "bg-emerald-400" },
-};
+// ... CATEGORY_STYLES stays the same ...
 
 export default function Dashboard() {
   const router = useRouter();
@@ -21,6 +15,27 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [emailLoading, setEmailLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Use useCallback to memoize fetchEmails
+  const fetchEmails = useCallback(async () => {
+    try {
+      setEmailLoading(true);
+      const res = await fetch("/api/gmail/inbox");
+      const data = await res.json();
+      
+      if (data.error) {
+        setError(data.error);
+        setEmails([]);
+      } else {
+        setEmails(data.emails || []);
+      }
+    } catch (err) {
+      setError("Failed to fetch emails");
+      console.error(err);
+    } finally {
+      setEmailLoading(false);
+    }
+  }, []);
 
   // Check authentication on mount
   useEffect(() => {
@@ -34,10 +49,8 @@ export default function Dashboard() {
 
     setUsername(storedUsername);
     setLoading(false);
-    
-    // Fetch Gmail emails
     fetchEmails();
-  }, [router]);
+  }, [router, fetchEmails]);
 
   async function fetchEmails() {
     try {
