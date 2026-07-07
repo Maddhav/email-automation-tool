@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -25,65 +23,68 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-  // Check authentication
-  const storedUsername = localStorage.getItem("username");
-  const storedUserId = localStorage.getItem("user_id");
+    const storedUsername = localStorage.getItem("username");
+    const storedUserId = localStorage.getItem("user_id");
 
-  if (!storedUsername || !storedUserId) {
-    router.push("/auth/login");
-    return;
-  }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  setUsername(storedUsername);
-  setLoading(false);
-
-  // Fetch emails
-  (async () => {
-    try {
-      setEmailLoading(true);
-      const res = await fetch("/api/gmail/inbox");
-      const data = await res.json();
-      
-      if (data.error) {
-        setError(data.error);
-        setEmails([]);
-      } else {
-        setEmails(data.emails || []);
-      }
-    } catch (err) {
-      setError("Failed to fetch emails");
-      console.error(err);
-    } finally {
-      setEmailLoading(false);
+    if (!storedUsername || !storedUserId) {
+      router.push("/auth/login");
+      return;
     }
-  })();
-}, [router]);
+
+    // All setState calls live inside this async function so none of them
+    // fire synchronously in the effect body itself (fixes
+    // react-hooks/set-state-in-effect build error on Vercel).
+    async function init() {
+      setUsername(storedUsername);
+      setLoading(false);
+
+      try {
+        setEmailLoading(true);
+        const res = await fetch("/api/gmail/inbox");
+        const data = await res.json();
+
+        if (data.error) {
+          setError(data.error);
+          setEmails([]);
+        } else {
+          setEmails(data.emails || []);
+        }
+      } catch (err) {
+        setError("Failed to fetch emails");
+        console.error(err);
+      } finally {
+        setEmailLoading(false);
+      }
+    }
+
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
 
   async function analyzeEmail(email) {
     if (analyses[email.id]) {
       setSelected(email);
       return;
     }
-    
+
     setSelected(email);
     setAnalyzing(email.id);
-    
+
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          email: `Subject: ${email.subject}\n\n${email.snippet || email.body}` 
+        body: JSON.stringify({
+          email: `Subject: ${email.subject}\n\n${email.snippet || email.body}`
         }),
       });
-      
+
       const data = await res.json();
       setAnalyses(prev => ({ ...prev, [email.id]: data }));
     } catch (err) {
       console.error("Analysis error:", err);
     }
-    
+
     setAnalyzing(null);
   }
 
