@@ -132,13 +132,14 @@ export default function SignUp() {
 </div>
 
           <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            required
-          />
+         type="email"
+         placeholder="Email"
+         value={email}
+         onChange={(e) => setEmail(e.target.value)}
+         pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
+         className="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+         required
+/>
 
           <div>
             <input
@@ -189,12 +190,12 @@ export default function SignUp() {
           </div>
 
           <button
-            type="submit"
-            disabled={loading || passwordStrength < 3 || usernameError}
-            className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold py-2 rounded transition"
-          >
-            {loading ? "Creating Account..." : "Sign Up"}
-          </button>
+  type="submit"
+  disabled={loading || passwordStrength < 3 || !email.includes("@") || email.length === 0}
+  className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold py-2 rounded transition"
+>
+  {loading ? "Creating Account..." : "Sign Up"}
+</button>
 
           
         </form>
