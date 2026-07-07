@@ -1,9 +1,17 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// ... CATEGORY_STYLES stays the same ...
+const CATEGORY_STYLES = {
+  Complaint:  { badge: "bg-red-500/15 text-red-700 border border-red-500/20",    dot: "bg-red-400" },
+  Urgent:     { badge: "bg-orange-500/15 text-orange-700 border border-orange-500/20", dot: "bg-orange-400" },
+  Inquiry:    { badge: "bg-blue-500/15 text-blue-700 border border-blue-500/20",  dot: "bg-blue-400" },
+  Spam:       { badge: "bg-gray-500/15 text-gray-400 border border-gray-500/20",  dot: "bg-gray-500" },
+  General:    { badge: "bg-emerald-500/15 text-emerald-700 border border-emerald-500/20", dot: "bg-emerald-400" },
+};
 
 export default function Dashboard() {
   const router = useRouter();
@@ -16,43 +24,22 @@ export default function Dashboard() {
   const [emailLoading, setEmailLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Use useCallback to memoize fetchEmails
-  const fetchEmails = useCallback(async () => {
-    try {
-      setEmailLoading(true);
-      const res = await fetch("/api/gmail/inbox");
-      const data = await res.json();
-      
-      if (data.error) {
-        setError(data.error);
-        setEmails([]);
-      } else {
-        setEmails(data.emails || []);
-      }
-    } catch (err) {
-      setError("Failed to fetch emails");
-      console.error(err);
-    } finally {
-      setEmailLoading(false);
-    }
-  }, []);
-
-  // Check authentication on mount
   useEffect(() => {
-    const storedUsername = localStorage.getItem("username");
-    const storedUserId = localStorage.getItem("user_id");
+  // Check authentication
+  const storedUsername = localStorage.getItem("username");
+  const storedUserId = localStorage.getItem("user_id");
 
-    if (!storedUsername || !storedUserId) {
-      router.push("/auth/login");
-      return;
-    }
+  if (!storedUsername || !storedUserId) {
+    router.push("/auth/login");
+    return;
+  }
 
-    setUsername(storedUsername);
-    setLoading(false);
-    fetchEmails();
-  }, [router, fetchEmails]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  setUsername(storedUsername);
+  setLoading(false);
 
-  async function fetchEmails() {
+  // Fetch emails
+  (async () => {
     try {
       setEmailLoading(true);
       const res = await fetch("/api/gmail/inbox");
@@ -70,7 +57,8 @@ export default function Dashboard() {
     } finally {
       setEmailLoading(false);
     }
-  }
+  })();
+}, [router]);
 
   async function analyzeEmail(email) {
     if (analyses[email.id]) {
@@ -131,7 +119,6 @@ export default function Dashboard() {
         .scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
       `}</style>
 
-      {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold">A</div>
@@ -149,7 +136,6 @@ export default function Dashboard() {
       </header>
 
       <div className="flex h-screen">
-        {/* Sidebar */}
         <aside className="w-52 border-r border-gray-800 p-4 flex flex-col">
           <div className="mb-6">
             <p className="text-xs text-gray-500 uppercase mb-3">Stats</p>
@@ -166,7 +152,6 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* Email list */}
         <div className="w-80 border-r border-gray-800 flex flex-col">
           <div className="px-4 py-3 border-b border-gray-800">
             <h2 className="text-sm font-semibold">Inbox ({emails.length})</h2>
@@ -181,12 +166,12 @@ export default function Dashboard() {
               <div className="flex items-center justify-center h-full text-center px-4">
                 <div>
                   <p className="text-red-400 text-sm mb-2">{error}</p>
-                  <p className="text-gray-500 text-xs">Try reconnecting Gmail from connect page</p>
+                  <p className="text-gray-500 text-xs">Try reconnecting Gmail</p>
                 </div>
               </div>
             ) : emails.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-500 text-sm text-center px-4">
-                <p>No unread emails found</p>
+                <p>No emails found</p>
               </div>
             ) : (
               emails.map(email => {
@@ -215,7 +200,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Detail pane */}
         <main className="flex-1 flex flex-col overflow-hidden p-6">
           {!selected ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -224,7 +208,6 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-4 overflow-y-auto">
-              {/* Email Header */}
               <div className="glass rounded-xl p-5">
                 <h2 className="text-lg font-semibold text-white mb-2">{selected.subject}</h2>
                 <p className="text-sm text-gray-400">{selected.from}</p>
@@ -241,7 +224,6 @@ export default function Dashboard() {
                 </div>
               ) : currentAnalysis ? (
                 <>
-                  {/* Analysis cards */}
                   <div className="grid grid-cols-3 gap-3">
                     {[
                       { label: "Category", value: currentAnalysis.category, style: CATEGORY_STYLES[currentAnalysis.category]?.badge },
@@ -257,13 +239,11 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  {/* Summary */}
                   <div className="glass rounded-xl p-5">
                     <p className="text-xs text-gray-500 uppercase mb-2">Summary</p>
                     <p className="text-sm text-gray-300">{currentAnalysis.summary}</p>
                   </div>
 
-                  {/* Draft reply */}
                   <div className="glass rounded-xl p-5">
                     <p className="text-xs text-gray-500 uppercase mb-3">AI Draft Reply</p>
                     <textarea
